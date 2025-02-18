@@ -25,18 +25,42 @@ export const createEmbed = (tokens, poolAddress, signature, user, lbPair) => {
 
 }
 
-const WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL
-if (!WEBHOOK_URL) {
-    throw new Error("DISCORD_WEBHOOK_URL is not defined")
+const WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
+const RETRY_ATTEMPTS = 3;
+const RETRY_DELAY = 1000;
+
+async function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 export const sendMessage = async (message) => {
-    await fetch(`${WEBHOOK_URL}`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ embeds: message.embeds })
-    }).catch(console.error)
+    if (!WEBHOOK_URL) {
+        throw new Error("DISCORD_WEBHOOK_URL is not defined");
+    }
 
+    for (let attempt = 1; attempt <= RETRY_ATTEMPTS; attempt++) {
+        try {
+            const response = await fetch(WEBHOOK_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ embeds: message.embeds })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            return;
+        } catch (error) {
+            console.error(`Discord webhook attempt ${attempt} failed:`, error);
+            
+            if (attempt === RETRY_ATTEMPTS) {
+                throw error;
+            }
+            
+            await sleep(RETRY_DELAY * attempt);
+        }
+    }
 }

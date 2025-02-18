@@ -5,6 +5,7 @@ import { LbPair, LiquidityParameterByStrategy } from "../utils/decode.js"
 import base58 from "bs58"
 import { createEmbed, sendMessage } from "../utils/discord.js";
 import { fetchPriceFromJupiter } from "./jupiter.js";
+import { SIGNATURE_CACHE_SIZE } from "../config/constants.js";
 
 const targets = [
     "Program log: Instruction: AddLiquidityByStrategy"
@@ -99,25 +100,38 @@ const inspectInstruction = async (instruction, transaction) => {
 
 }
 
-let signatures = []
-export const monitorLiqudity = () => {
+class SignatureCache {
+    constructor(maxSize) {
+        this.maxSize = maxSize;
+        this.cache = new Set();
+    }
+
+    add(signature) {
+        if (this.cache.size >= this.maxSize) {
+            const firstItem = this.cache.values().next().value;
+            this.cache.delete(firstItem);
+        }
+        this.cache.add(signature);
+    }
+
+    has(signature) {
+        return this.cache.has(signature);
+    }
+}
+
+const signatureCache = new SignatureCache(SIGNATURE_CACHE_SIZE);
+
+export const monitorLiquidity = () => {
     connection.onLogs(MeteoraDlmmProgram, async ({ logs, signature, err }) => {
-
-        if (err) return
-        if (signatures.includes(signature)) return
-        signatures.push(signature)
-        if (signatures.length > 100) {
-            signatures = signatures.slice(1)
-        }
-        if (!checkLogs(logs)) return
-
-        try{
-            await inspectSignature(signature)
-        }catch(err){
-            console.error(err)
-            console.log(signature)
-        }
-
+        if (err || signatureCache.has(signature)) return;
+        signatureCache.add(signature);
         
-    }, "confirmed")
+        if (!checkLogs(logs)) return;
+
+        try {
+            await inspectSignature(signature);
+        } catch(err) {
+            console.error(`Error processing signature ${signature}:`, err);
+        }
+    }, "confirmed");
 }
