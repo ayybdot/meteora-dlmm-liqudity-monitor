@@ -7,3 +7,11 @@ if (!RPC_URL) {
 }
 
 export const connection = new Connection(RPC_URL, 'confirmed')
+
+export const getTokenDecimalsFromTransaction = (transaction, tokenAddress) => {
+
+    const tokenAccounts = [...transaction.meta.postTokenBalances, ...transaction.meta.preTokenBalances]
+    const tokenAccount = tokenAccounts.find(account => account.mint == tokenAddress.toString())
+    return tokenAccount?.uiTokenAmount?.decimals || null
+
+}
