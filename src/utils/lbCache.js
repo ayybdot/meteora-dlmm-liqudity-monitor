@@ -1,14 +1,16 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const CACHE_DIR = path.resolve(__dirname, '../cache'); 
+const CACHE_DIR = path.join(__dirname, '../cache');
 
 const MAX_CACHE_SIZE = 1000;
 
 if (!fs.existsSync(CACHE_DIR)) {
-    fs.mkdirSync(CACHE_DIR);
+    fs.mkdirSync(CACHE_DIR, { recursive: true });
 }
 
 const getFilePath = (lbPair) => path.join(CACHE_DIR, lbPair.toString());
