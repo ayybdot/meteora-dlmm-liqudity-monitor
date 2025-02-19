@@ -97,7 +97,7 @@ const inspectInstruction = async (instruction, transaction) => {
 
         let timestamp
         if(activationType) {
-            timestamp = transaction.blockTime
+            timestamp = decodedPairData.activationPoint
         }else{
             const slotDiff = 10
             const slotTime = slotDiff * 400 / 1000
