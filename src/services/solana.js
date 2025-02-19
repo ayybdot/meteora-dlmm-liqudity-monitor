@@ -6,8 +6,11 @@ import { Logger } from "../utils/logger.js"
 const fetchTransactionLogger = new Logger('Fetch Transaction')
 export const fetchTransaction = async (signature) => {
     fetchTransactionLogger.count++
-    const tx = await connection.getParsedTransaction(signature, { maxSupportedTransactionVersion: 0, commitment: "confirmed" })
-    if (!tx) throw new Error('Transaction not found')
+    let tx = await connection.getParsedTransaction(signature, { maxSupportedTransactionVersion: 0, commitment: "confirmed" })
+    if (!tx) {
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        tx = await connection.getParsedTransaction(signature, { maxSupportedTransactionVersion: 0, commitment: "confirmed" })
+    }
     return tx
 
 }

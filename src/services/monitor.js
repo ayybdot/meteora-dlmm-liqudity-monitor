@@ -6,6 +6,7 @@ import base58 from "bs58"
 import { createEmbed, sendMessage } from "../utils/discord.js";
 import { fetchPriceFromJupiter } from "./jupiter.js";
 import { SIGNATURE_CACHE_SIZE } from "../config/constants.js";
+import lbCache from "../utils/lbCache.js";
 
 const targets = [
     "Program log: Instruction: AddLiquidityByStrategy"
@@ -18,10 +19,10 @@ const banned = [
 const invoke = "Program LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo invoke"
 
 const checkLogs = (logs) => {
-    const shouldFetch = logs.some((log, i) => 
+    const shouldFetch = logs.some((log, i) =>
         log.startsWith(invoke) && targets.includes(logs[i + 1])
     );
-    
+
     return shouldFetch && !logs.some(log => banned.includes(log));
 };
 
@@ -59,18 +60,18 @@ const filterLiquidtyAdditionInstructions = (instructions) => {
 
 const inspectInstruction = async (instruction, transaction) => {
 
-    const tradeTime = transaction.blockTime
-    const lpPair = instruction.accounts[1]
+    const lbPair = instruction.accounts[1]
     const sender = instruction.accounts[11]
     const bs58instructionData = instruction.data
     const instructionData = base58.decode(bs58instructionData)
     const decodedInstructionData = LiquidityParameterByStrategy.decode(instructionData)
-    const pairData = await getAccountData(lpPair)
+    if(lbCache.isInCache(lbPair.toString())) return
+    const pairData = await getAccountData(lbPair)
     const decodedPairData = LbPair.decode(pairData.value.data)
+    const activationType = decodedPairData.activationType
     const activationPoint = Number(decodedPairData.activationPoint)
-    if (activationPoint > tradeTime) {
-        console.log("Activation point not reached yet", activationPoint, lpPair.toBase58())
-
+    const current = activationType == 0 ? transaction.slot : transaction.blockTime
+    if (activationPoint > current) {
         const tokenX = instruction.accounts[7]
         const tokenY = instruction.accounts[8]
         const tokenXLamports = decodedInstructionData.amountX
@@ -90,12 +91,23 @@ const inspectInstruction = async (instruction, transaction) => {
         const reserveYValue = Number(reserveYAmount.value.uiAmount) * tokenYPrice
         const tokenXPrice = reserveYValue / Number(reserveXAmount.value.uiAmount)
 
-        const tokenXData = { token: tokenX.toString(), amount: Number(tokenXAmount), totalPrice : Number(tokenXAmount) * tokenXPrice, name: tokenXMetadata.name, symbol: tokenXMetadata.symbol, description: tokenXMetadata.description, image: tokenXMetadata.image, extensions: tokenXMetadata.extensions }
-        const tokenYData = { token: tokenY.toString(), amount: Number(tokenYAmount), totalPrice : Number(tokenYAmount) * tokenYPrice, name: tokenYMetadata.name, symbol: tokenYMetadata.symbol, description: tokenYMetadata.description, image: tokenYMetadata.image, extensions: tokenYMetadata.extensions }
+        const tokenXData = { token: tokenX.toString(), amount: Number(tokenXAmount), totalPrice: Number(tokenXAmount) * tokenXPrice, name: tokenXMetadata.name, symbol: tokenXMetadata.symbol, description: tokenXMetadata.description, image: tokenXMetadata.image, extensions: tokenXMetadata.extensions }
+        const tokenYData = { token: tokenY.toString(), amount: Number(tokenYAmount), totalPrice: Number(tokenYAmount) * tokenYPrice, name: tokenYMetadata.name, symbol: tokenYMetadata.symbol, description: tokenYMetadata.description, image: tokenYMetadata.image, extensions: tokenYMetadata.extensions }
         const tokens = [tokenXData, tokenYData]
 
-        const embed = createEmbed(tokens, lpPair.toString(), transaction.transaction.signatures[0], sender.toString(), decodedPairData)
+        let timestamp
+        if(activationType) {
+            timestamp = transaction.blockTime
+        }else{
+            const slotDiff = 10
+            const slotTime = slotDiff * 400 / 1000
+            timestamp = Math.floor(transaction.blockTime + slotTime)
+        }
+
+        const embed = createEmbed(tokens, lbPair.toString(), transaction.transaction.signatures[0], sender.toString(), decodedPairData, timestamp, sender)
         await sendMessage({ embeds: [embed] })
+    }else{
+        lbCache.addToCache(lbPair.toString())
     }
 
 }
@@ -125,12 +137,12 @@ export const monitorLiquidity = () => {
     connection.onLogs(MeteoraDlmmProgram, async ({ logs, signature, err }) => {
         if (err || signatureCache.has(signature)) return;
         signatureCache.add(signature);
-        
+
         if (!checkLogs(logs)) return;
 
         try {
             await inspectSignature(signature);
-        } catch(err) {
+        } catch (err) {
             console.error(`Error processing signature ${signature}:`, err);
         }
     }, "confirmed");
