@@ -23,7 +23,7 @@ export class Logger {
         console.error(`[${this.name}] Error:`, error)
     }
 
-    log(message){
+    log(){
 
         let AverageRquests = this.count / ((Date.now() - this.start) / 1000)
         let TotalRequest = this.count
@@ -33,7 +33,7 @@ export class Logger {
 
         return {
             Name: this.name,
-            [`Average Requests req/s`] : AverageRquests.toFixed(2),
+            [`Average Requests req/s`] : +AverageRquests.toFixed(2),
             [`Total Requests`] : TotalRequest,
             [`Total Errors`] : TotalErrors,
             [`Last Sycle Requests`] : LastSycleRequests

@@ -1,6 +1,6 @@
 import { Logger } from "../utils/logger.js"
 
-const fetchPriceFromJupiterLogger = new Logger('FetchPriceFromJupiter')
+const fetchPriceFromJupiterLogger = new Logger('Fetch Price From Jupiter')
 export const fetchPriceFromJupiter = async (tokenAddress) => {
     fetchPriceFromJupiterLogger.countRequest()
     try {

@@ -8,7 +8,7 @@ export const createEmbed = (tokens, poolAddress, signature, user, lbPair, activa
     const addedFields = tokens.map(token => {
         return {
             name : `Added ${token.symbol} Amount`,
-            value : `$${token.amount.toLocaleString()} (${token.totalPrice.toLocaleString()})`,
+            value : `${token.amount.toLocaleString()} ($${token.totalPrice.toLocaleString()})`,
         }
     })
 
