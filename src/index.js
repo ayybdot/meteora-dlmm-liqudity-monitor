@@ -1,5 +1,5 @@
 import "dotenv/config"
-import { monitorLiquidity } from "./services/monitor.js"
+import { inspectSignature, monitorLiquidity } from "./services/monitor.js"
 
 async function main() {
     try {

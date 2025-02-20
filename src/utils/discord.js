@@ -1,3 +1,5 @@
+import { RETRY_ATTEMPTS, RETRY_DELAY } from "../config/constants.js";
+
 export const createEmbed = (tokens, poolAddress, signature, user, lbPair, activationTimestamp, sender) => {
 
 
@@ -6,7 +8,7 @@ export const createEmbed = (tokens, poolAddress, signature, user, lbPair, activa
     const addedFields = tokens.map(token => {
         return {
             name : `Added ${token.symbol} Amount`,
-            value : `${token.amount.toLocaleString()} (${token.totalPrice.toLocaleString()} USDC)`,
+            value : `$${token.amount.toLocaleString()} (${token.totalPrice.toLocaleString()})`,
         }
     })
 
@@ -29,8 +31,6 @@ export const createEmbed = (tokens, poolAddress, signature, user, lbPair, activa
 
 const WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 const DISCORD_ROLE_ID = process.env.DISCORD_ROLE_ID;
-const RETRY_ATTEMPTS = 3;
-const RETRY_DELAY = 1000;
 
 async function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));

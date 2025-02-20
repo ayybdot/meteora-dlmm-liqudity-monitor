@@ -1,6 +1,6 @@
 import { MeteoraDlmmProgram, TokenProgram } from "../config/constants.js";
-import { connection, getTokenDecimalsFromTransaction } from "../utils/solana.js";
-import { fetchTransaction, getAccountData, getMetadata, getTokenAccountBalance } from "../services/solana.js"
+import { connection, getPostTokenAccountBalanceFromTransaction, getTokenDecimalsFromTransaction } from "../utils/solana.js";
+import { fetchTransaction, getAccountData, getMetadata } from "../services/solana.js"
 import { LbPair, LiquidityParameterByStrategy } from "../utils/decode.js"
 import base58 from "bs58"
 import { createEmbed, sendMessage } from "../utils/discord.js";
@@ -30,6 +30,7 @@ const checkLogs = (logs) => {
 export const inspectSignature = async (signature) => {
 
     const tx = await fetchTransaction(signature)
+    if (!tx) return
     const liqudityAdditionInstructions = filterLiquidtyAdditionInstructions(tx.transaction.message.instructions)
     if (liqudityAdditionInstructions.length == 0) {
         return
@@ -85,11 +86,11 @@ const inspectInstruction = async (instruction, transaction) => {
 
         const reserveX = decodedPairData.reserveX
         const reserveY = decodedPairData.reserveY
-        const reserveXAmount = await getTokenAccountBalance(reserveX)
-        const reserveYAmount = await getTokenAccountBalance(reserveY)
+        const reserveXAmount = getPostTokenAccountBalanceFromTransaction(transaction, reserveX)
+        const reserveYAmount  = getPostTokenAccountBalanceFromTransaction(transaction, reserveY)
         const tokenYPrice = await fetchPriceFromJupiter(tokenY.toString())
-        const reserveYValue = Number(reserveYAmount.value.uiAmount) * tokenYPrice
-        const tokenXPrice = reserveYValue / Number(reserveXAmount.value.uiAmount)
+        const reserveYValue = Number(reserveYAmount) * tokenYPrice
+        const tokenXPrice = reserveYValue / Number(reserveXAmount)
 
         const tokenXData = { token: tokenX.toString(), amount: Number(tokenXAmount), totalPrice: Number(tokenXAmount) * tokenXPrice, name: tokenXMetadata.name, symbol: tokenXMetadata.symbol, description: tokenXMetadata.description, image: tokenXMetadata.image, extensions: tokenXMetadata.extensions }
         const tokenYData = { token: tokenY.toString(), amount: Number(tokenYAmount), totalPrice: Number(tokenYAmount) * tokenYPrice, name: tokenYMetadata.name, symbol: tokenYMetadata.symbol, description: tokenYMetadata.description, image: tokenYMetadata.image, extensions: tokenYMetadata.extensions }

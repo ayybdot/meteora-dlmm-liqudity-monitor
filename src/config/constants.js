@@ -12,3 +12,8 @@ export const METADATA_BUFFER_RANGES = {
     SYMBOL: { start: 102, end: 115 },
     URI: { start: 116, end: 319 }
 }
+
+export const LOG_INTERVAL = 10000 // 10 seconds
+
+export const RETRY_ATTEMPTS = 3;
+export const RETRY_DELAY = 1000;

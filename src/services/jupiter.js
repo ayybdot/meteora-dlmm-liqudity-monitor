@@ -2,7 +2,7 @@ import { Logger } from "../utils/logger.js"
 
 const fetchPriceFromJupiterLogger = new Logger('FetchPriceFromJupiter')
 export const fetchPriceFromJupiter = async (tokenAddress) => {
-    fetchPriceFromJupiterLogger.count++
+    fetchPriceFromJupiterLogger.countRequest()
     try {
         const response = await fetch(`https://api.jup.ag/price/v2?ids=${tokenAddress}`)
         
@@ -15,6 +15,7 @@ export const fetchPriceFromJupiter = async (tokenAddress) => {
 
         return data.data[tokenAddress].price
     } catch (err) {
+        fetchPriceFromJupiterLogger.logError(err)
         console.error(`Error fetching price from Jupiter for token ${tokenAddress}:`, err)
         return null
     }

@@ -15,3 +15,11 @@ export const getTokenDecimalsFromTransaction = (transaction, tokenAddress) => {
     return tokenAccount?.uiTokenAmount?.decimals || null
 
 }
+
+export const getPostTokenAccountBalanceFromTransaction = (transaction, accountAddress) => {
+
+    const accountIndex = transaction.transaction.message.accountKeys.findIndex(account => account.pubkey.toString() == accountAddress.toString())
+    const tokenAccount = transaction.meta.postTokenBalances.find(account => account.accountIndex == accountIndex)
+    return tokenAccount?.uiTokenAmount?.uiAmount || null
+
+}

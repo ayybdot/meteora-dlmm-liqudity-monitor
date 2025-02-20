@@ -1,3 +1,7 @@
+import { LOG_INTERVAL} from "../config/constants.js"
+
+const loggers = []
+
 export class Logger {
 
     constructor(name){
@@ -5,35 +9,45 @@ export class Logger {
         this.start = Date.now()
         this.count = 0
         this.errors = 0
-        this.lastError = null
-        
-        if(process.env.LOG_REPORTS === 'true'){
-            this.startReporting()
-        }
+        this.lastSycleCount = 0
+        loggers.push(this)
     }
 
-    startReporting() {
-        setInterval(() => this.log(), 10000)
+    countRequest(){
+        this.count++
+        this.lastSycleCount++
     }
 
     logError(error) {
         this.errors++
-        this.lastError = error
         console.error(`[${this.name}] Error:`, error)
     }
 
-    log(){
-        const now = Date.now()
-        const runtime = (now - this.start) / 1000
-        const avg = this.count / runtime
-        
-        console.log(`
-            Service: ${this.name}
-            Requests/sec: ${avg.toFixed(2)}
-            Total requests: ${this.count}
-            Total errors: ${this.errors}
-            Uptime: ${runtime.toFixed(0)}s
-        `)
+    log(message){
+
+        let AverageRquests = this.count / ((Date.now() - this.start) / 1000)
+        let TotalRequest = this.count
+        let TotalErrors = this.errors
+        let LastSycleRequests = this.lastSycleCount
+        this.lastSycleCount = 0
+
+        return {
+            Name: this.name,
+            [`Average Requests req/s`] : AverageRquests.toFixed(2),
+            [`Total Requests`] : TotalRequest,
+            [`Total Errors`] : TotalErrors,
+            [`Last Sycle Requests`] : LastSycleRequests
+        }
+
     }
 
+}
+
+if(process.env.LOG_REPORTS){
+    setInterval(() => {
+        
+        const dataTable = loggers.map(logger => logger.log())
+        console.table(dataTable)
+
+    }, LOG_INTERVAL);
 }
