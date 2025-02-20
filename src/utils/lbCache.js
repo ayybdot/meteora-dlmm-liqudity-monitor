@@ -7,7 +7,7 @@ const __dirname = path.dirname(__filename);
 
 const CACHE_DIR = path.join(__dirname, '../cache');
 
-const MAX_CACHE_SIZE = 1000;
+const MAX_CACHE_SIZE = process.env.CACHE_SIZE || 1000;
 
 if (!fs.existsSync(CACHE_DIR)) {
     fs.mkdirSync(CACHE_DIR, { recursive: true });
