@@ -66,12 +66,13 @@ const inspectInstruction = async (instruction, transaction) => {
     const bs58instructionData = instruction.data
     const instructionData = base58.decode(bs58instructionData)
     const decodedInstructionData = LiquidityParameterByStrategy.decode(instructionData)
-    if(lbCache.isInCache(lbPair.toString())) return
+    if(lbCache.isInCache(lbPair.toString())) return false
     const pairData = await getAccountData(lbPair)
     const decodedPairData = LbPair.decode(pairData.value.data)
     const activationType = decodedPairData.activationType
     const activationPoint = Number(decodedPairData.activationPoint)
     const current = activationType == 0 ? transaction.slot : transaction.blockTime
+    console.log(activationPoint, current)
     if (activationPoint > current) {
         const tokenX = instruction.accounts[7]
         const tokenY = instruction.accounts[8]
