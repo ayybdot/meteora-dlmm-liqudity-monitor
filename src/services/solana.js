@@ -46,6 +46,10 @@ export const getMetadata = async (tokenAddress) => {
 
     try {
 
+        if (!(tokenAddress instanceof PublicKey)) {
+            tokenAddress = new PublicKey(tokenAddress)
+        }
+
         const metadataPda = PublicKey.findProgramAddressSync([Buffer.from("metadata"), MetadataProgram.toBuffer(), tokenAddress.toBuffer()], MetadataProgram)[0]
 
         const accountInfo = await connection.getAccountInfo(metadataPda)
@@ -65,21 +69,22 @@ export const getMetadata = async (tokenAddress) => {
 
         try {
             new URL(uri)
+            const metadataJson = await fetch(uri).then(res => res.json())
+
+            if (metadataJson === null) return { name, symbol, description: undefined, image: undefined }
+
+            return {
+                name,
+                symbol,
+                description: metadataJson.description,
+                image: metadataJson.image,
+                extensions: metadataJson.extensions
+            }
         } catch (e) {
             return { name, symbol, description: undefined, image: undefined }
         }
 
-        const metadataJson = await fetch(uri).then(res => res.json())
 
-        if (metadataJson === null) return { name, symbol, description: undefined, image: undefined }
-
-        return {
-            name,
-            symbol,
-            description: metadataJson.description,
-            image: metadataJson.image,
-            extensions: metadataJson.extensions
-        }
 
     } catch (err) {
         getMetadataLogger.logError(err)
